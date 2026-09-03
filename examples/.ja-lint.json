@@ -1,0 +1,4 @@
+{
+  "include_globs": ["content/**/*.md", "src/**/*.tsx", "src/**/*.ts", "messages/ja/**/*.json"],
+  "exclude_globs": ["docs/**", "e2e/**", "**/*.test.ts", "**/*.test.tsx", "tools/ja_lint/**"]
+}

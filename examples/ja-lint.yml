@@ -1,0 +1,19 @@
+name: ja-lint
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  ja-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch origin "$BASE_REF"
+      - name: Check Japanese expressions (changed lines only)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python3 tools/ja_lint/ja_lint.py --changed "origin/$BASE_REF" --fail-on critical --github-annotations

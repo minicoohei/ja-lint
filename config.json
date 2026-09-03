@@ -1,0 +1,31 @@
+{
+  "extensions": {
+    ".md": "prose",
+    ".txt": "prose",
+    ".mdx": "prose",
+    ".ts": "code",
+    ".tsx": "code",
+    ".js": "code",
+    ".jsx": "code",
+    ".json": "json",
+    ".html": "html"
+  },
+  "exclude_basenames": [
+    "CLAUDE.md",
+    "MEMORY.md",
+    "AGENTS.md",
+    "rules.jsonl"
+  ],
+  "exclude_path_substrings": [
+    "/memory/",
+    "/.claude/plans/",
+    "/node_modules/",
+    "/.git/",
+    "/hooks/ja_lint/",
+    "/skills/ja-lint/"
+  ],
+  "default_profile": "business",
+  "min_japanese_chars": 30,
+  "max_violations_in_warning": 5,
+  "bash_mtime_window_sec": 15
+}
