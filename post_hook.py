@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Claude Code PostToolUse hook for ja_lint."""
+"""Codex / Claude Code PostToolUse hook for ja_lint."""
 
 from __future__ import annotations
 
@@ -146,6 +146,43 @@ def _collect_from_bash(payload: dict, config: dict) -> list[str]:
     return targets
 
 
+def _collect_from_patch(payload: dict, config: dict) -> list[str]:
+    """Read Codex apply_patch headers; content lines cannot be headers.
+
+    Codex supplies the freeform patch as tool_input.command. A move replaces
+    its Update File target with the destination; deleted files are not linted.
+    """
+    tool_input = payload.get("tool_input")
+    if not isinstance(tool_input, dict):
+        return []
+    command = tool_input.get("command")
+    if not isinstance(command, str):
+        return []
+    paths: list[str] = []
+    current: Optional[str] = None
+    for line in command.splitlines():
+        if line.startswith(("*** Add File: ", "*** Update File: ")):
+            if current:
+                paths.append(current)
+            current = line.split(": ", 1)[1]
+        elif line.startswith("*** Move to: ") and current is not None:
+            current = line[len("*** Move to: "):]
+        elif line.startswith("*** Delete File: ") or line == "*** End Patch":
+            if current:
+                paths.append(current)
+            current = None
+    if current:
+        paths.append(current)
+    targets: list[str] = []
+    for path in paths:
+        if not ja_lint.is_target_path(path, cwd=payload.get("cwd"), config=config):
+            continue
+        absolute = ja_lint._absolute_path(path, payload.get("cwd"))
+        if os.path.isfile(absolute) and absolute not in targets:
+            targets.append(absolute)
+    return targets
+
+
 def main() -> None:
     try:
         if os.environ.get("JA_LINT", "").lower() == "off":
@@ -181,6 +218,8 @@ def main() -> None:
             targets = [ja_lint._absolute_path(tool_input["file_path"], cwd)]
         elif tool_name in COMMAND_TOOLS:
             targets = _collect_from_bash(payload, config)
+        elif tool_name == "apply_patch":
+            targets = _collect_from_patch(payload, config)
         else:
             return
 

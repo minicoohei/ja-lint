@@ -2,7 +2,7 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|Bash",
+        "matcher": "Edit|Write|MultiEdit|Bash|apply_patch",
         "hooks": [{ "type": "command", "command": "python3 ~/.claude/hooks/ja_lint/post_hook.py", "timeout": 10 }]
       }
     ],
