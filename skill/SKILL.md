@@ -7,6 +7,8 @@ description: AIが書く日本語ドキュメントのNGワード検査（Hooks�
 
 検査本体は `~/.claude/hooks/ja_lint/` にある（PostToolUse で書き込み直後に検査、Stop で critical 残存をブロック）。このスキルはそのルールを育てる・手動で回すための手順。
 
+Codex では、以下の `~/.claude/hooks/ja_lint/` を実際の配置先（既定 `~/.codex/hooks/ja_lint/`）に読み替える。使用中の実体を確認し、別エージェントのルールを意図せず変更しない。Codex の `apply_patch` は追加・更新・移動先を検査し、セッション単位で Stop 時に再確認する。
+
 - ルール正本: `~/.claude/hooks/ja_lint/rules.jsonl`（1行1ルール）
 - 設定: `~/.claude/hooks/ja_lint/config.json`（対象拡張子・除外パス・既定プロファイル）
 - 全体無効化: 環境変数 `JA_LINT=off` ／ プロファイル切替: `JA_LINT_PROFILE`（既定 `business`）
@@ -55,6 +57,7 @@ python3 ~/.claude/hooks/ja_lint/ja_lint.py --all                   # リポ設�
 「履歴からルール候補を出して」と言われたら:
 
 1. `~/.claude/projects/*/` 直下のセッション JSONL から直近1〜2週間分を対象に、ユーザー発話のうち日本語表現への修正指摘（「〜やめて」「〜が変」「〜に直して」等）を抽出する。JSONL は巨大なので Python でユーザーロールのみ絞ってから読む（全文をコンテキストに展開しない）
+   - Claude は `type=user`・`message.role=user` のメッセージを使う。Codex を対象にする場合は `~/.codex/sessions/YYYY/MM/DD/` 配下の JSONL から `type=response_item`・`payload.type=message`・`payload.role=user` の `payload.content` 内のテキストだけを使い、同じ発話の `event_msg` は重複集計しない。存在しないソースはスキップし、実際に確認したソースを報告する。
 2. 繰り返し出る指摘を頻度順に集計し、ルール候補（pattern / severity / good 案）として最大10件提案する
 3. **登録はユーザー承認後**。承認された分だけ手順1の 3〜5 で登録・実測する
 

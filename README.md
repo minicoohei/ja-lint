@@ -1,6 +1,6 @@
 # ja-lint
 
-AI が書く日本語の「型」を機械検出し、書き込み直後に書き直しを差し戻す検査器です。依存ゼロの純 Python 1 ファイルで、Claude Code の Hook・CLI・GitHub Actions のどこからでも同じルールで動きます。
+AI が書く日本語の「型」を機械検出し、書き込み直後に書き直しを差し戻す検査器です。依存ゼロの純 Python 1 ファイルで、Claude Code / Codex の Hook・CLI・GitHub Actions のどこからでも同じルールで動きます。
 
 対象は翻訳調・AI 文体・硬すぎる言い回しです。例: `〜することができます` `〜させていただき` `〜において` `A — B` のダッシュ連結、`AではなくB` の連発、`重要なのは` の前置き、`効く` `様々な` の空語。ルールは JSONL に 1 行 1 本で、正規表現と言い換え候補を持ちます（現在 50 本 + 文末反復・敬体常体混在の構造ルール 2 本）。
 
@@ -29,6 +29,20 @@ exit code: 0 = 違反なし / 1 = warn のみ / 2 = critical あり / 4 = 設定
 ### 2. Claude Code の Hook にする
 
 `examples/settings.json` の `hooks` を `~/.claude/settings.json` に足します。PostToolUse（Edit / Write / MultiEdit / Bash）で書き込み直後に検査して差し戻し、Stop で critical が残っていればセッション終了をブロックします。無効化は環境変数 `JA_LINT=off`。
+
+#### Codex で使う場合
+
+```bash
+git clone https://github.com/minicoohei/ja-lint ~/.codex/hooks/ja_lint
+```
+
+`examples/settings.json` の `hooks` を `~/.codex/hooks.json` に追加し、2 つのコマンドの `~/.claude/` を `~/.codex/` に置き換えます。既存の Hooks は残してください。Codex の Hooks 管理画面で定義を確認し、信頼して有効化します。CLI では `config.toml` の `[features]` 内で `hooks = true` を有効にします。[Codex Hooks の仕様](https://developers.openai.com/codex/hooks)も参照してください。
+
+Codex の Hook は正規化されたツール名 `Bash` / `apply_patch` を受け取ります。付属 matcher は両方を含み、Claude の既存ツール名にも対応します。`apply_patch` は `tool_input.command` のパッチ本文から追加・更新・移動先を検査し、日本語や空白を含むパスにも対応します。削除対象は検査しません。変更ファイルは `session_id` ごとに記録し、Stop で修正済み・削除済みファイルが終了を妨げないよう再検査します。`Bash` の対象検出はコマンド中のパスと更新時刻に基づく推定です。
+
+スキルも利用する場合は `skill/SKILL.md` を `~/.agents/skills/ja-lint/SKILL.md` に配置し、本文の実行パスをインストール先に合わせます。
+
+Codex のイベント処理と既存の Claude ツール処理は `python3 -m unittest discover -s ~/.codex/hooks/ja_lint/tests -p test_codex_hooks.py -v` で検証できます。このテストは状態ファイルを一時ディレクトリに隔離します。
 
 ### 3. リポジトリの CI にする
 
